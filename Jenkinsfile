@@ -11,6 +11,11 @@ pipeline {
             branchFilter: 'origin/(.*)', 
             selectedValue: 'DEFAULT'
         )
+        string(
+            name: 'SEMANTIC_VERSION',
+            defaultValue: '1.0.0',
+            description: 'Enter the semantic version (e.g., 1.0.0) for the Docker image tag.'
+        )
     }
     stages {
         stage('Checkout') {
@@ -22,7 +27,7 @@ pipeline {
         }
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${env.DOCKER_IMAGE}:${params.BRANCH} ."
+                sh "docker build -t ${env.DOCKER_IMAGE}:${params.SEMANTIC_VERSION} ."
             }
         }
         stage('Push Docker Image') {
@@ -34,23 +39,29 @@ pipeline {
                 )]) {
                     sh """
                         echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USER} --password-stdin
-                        docker push ${env.DOCKER_IMAGE}:${params.BRANCH}
+                        docker push ${env.DOCKER_IMAGE}:${params.SEMANTIC_VERSION}
                     """
                 }
             }
         }
         stage('Cleanup') {
             steps {
-                sh "docker rmi ${env.DOCKER_IMAGE}:${params.BRANCH}"
+                sh "docker rmi ${env.DOCKER_IMAGE}:${params.SEMANTIC_VERSION}"
             }
         }
     }
     post {
         success {
-            echo 'Pipeline succeeded!'
+            slackSend(
+                channel: '#jenkins',
+                message: "✅ Pipeline SUCCESSFUL: ${env.JOB_NAME} - ${env.BUILD_NUMBER}\nBranch: ${params.BRANCH}\nVersion: ${params.SEMANTIC_VERSION}\nMore info: ${env.BUILD_URL}"
+            )
         }
         failure {
-            echo 'Pipeline failed!'
+            slackSend(
+                channel: '#jenkins',
+                message: "❌ Pipeline FAILED: ${env.JOB_NAME} - ${env.BUILD_NUMBER}\nBranch: ${params.BRANCH}\nVersion: ${params.SEMANTIC_VERSION}\nMore info: ${env.BUILD_URL}"
+            )
         }
     }
 }

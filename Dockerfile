@@ -1,13 +1,36 @@
-FROM python:3.9-slim
+# Stage 1: Base image with dependencies
+FROM python:3.9-slim AS base
 
+# Prevents Python from writing .pyc files
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Ensures Python outputs are sent straight to terminal (no buffering)
+ENV PYTHONUNBUFFERED=1
+
+# Set the working directory
 WORKDIR /app
 
-COPY requirements.txt .
+# Create a non-privileged user for running the application
+ARG UID=10001
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "/nonexistent" \
+    --shell "/sbin/nologin" \
+    --no-create-home \
+    --uid "${UID}" \
+    appuser
 
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies using a cache mount for faster builds
+RUN --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=bind,source=requirements.txt,target=requirements.txt \
+    python -m pip install --no-cache-dir -r requirements.txt
 
+# Switch to the non-privileged user
+USER appuser
+
+# Copy the application code
 COPY . .
 
-EXPOSE 8001
-
+# Run the application
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
