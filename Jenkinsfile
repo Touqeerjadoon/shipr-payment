@@ -83,13 +83,13 @@ pipeline {
         success {
             slackSend(
                 channel: '#jenkins',
-                message: "✅ Pipeline SUCCESSFUL: ${env.JOB_NAME} - ${env.BUILD_NUMBER}\nBranch: ${params.BRANCH}\nVersion: ${params.SEMANTIC_VERSION}\nMore info: ${env.BUILD_URL}"
+                message: "✅ Pipeline SUCCESSFUL: ${env.JOB_NAME} - ${env.BUILD_NUMBER}\nBranch: ${params.BRANCH}\nVersion: ${params.SEMANTIC_VERSION}\nTriggered by: ${currentBuild.getBuildCauses()[0]?.userName ?: 'Unknown User'}\nMore info: ${env.BUILD_URL}"
             )
         }
         failure {
             slackSend(
                 channel: '#jenkins',
-                message: "❌ Pipeline FAILED: ${env.JOB_NAME} - ${env.BUILD_NUMBER}\nBranch: ${params.BRANCH}\nVersion: ${params.SEMANTIC_VERSION}\nMore info: ${env.BUILD_URL}"
+                message: "❌ Pipeline FAILED: ${env.JOB_NAME} - ${env.BUILD_NUMBER}\nBranch: ${params.BRANCH}\nVersion: ${params.SEMANTIC_VERSION}\nTriggered by: ${currentBuild.getBuildCauses()[0]?.userName ?: 'Unknown User'}\nMore info: ${env.BUILD_URL}"
             )
         }
     }
